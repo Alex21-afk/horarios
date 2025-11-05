@@ -1,0 +1,22 @@
+:root {
+  --primary: #14496b;
+  --secundary: #5ca9a9;
+  --texto: black;
+}
+
+/* nav */
+.nav-index {
+  background-color: var(--primary);
+}
+
+/* boton */
+
+.btn-index {
+  color: white;
+  background-color: var(--primary);
+}
+.btn-index:hover {
+  background-color: var(--secundary);
+  color: white;
+  cursor: pointer;
+}

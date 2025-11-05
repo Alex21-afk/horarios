@@ -1,15 +1,80 @@
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Bootstrap demo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
-  </head>
-  <body>
-    <h1>Hello, world!</h1>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
-  </body>
+<?php include 'includes/header.php'; ?>
+<?php require 'config/config.php'; ?>
 
+<?php
+function turnoTrabajador($fechaConsulta, $fechaInicio) {
+    $turnos = [
+        "Turno Tarde (Lun-Sáb 3pm-11pm)",
+        "Mañana Lun-Sáb (7am-4pm)",
+        "Mañana Lun-Vie (6:45am-5pm)"
+    ];
 
-</html>
+    $inicio = new DateTime($fechaInicio);
+    $consulta = new DateTime($fechaConsulta);
+
+    $dias = $inicio->diff($consulta)->days;
+    $semana = floor($dias / 7);
+    $turnoIndex = $semana % 3;
+
+    return $turnos[$turnoIndex];
+}
+?>
+
+<div class="card shadow p-4">
+    <h3 class="mb-4 text-center">Consulta de Turno</h3>
+
+    <form method="POST" class="row g-3">
+
+        <!-- SELECT TRABAJADOR -->
+        <div class="col-md-6">
+            <label class="form-label">Trabajador</label>
+            <select class="form-select" name="trabajador_id" required>
+                <option value="">Seleccionar...</option>
+                <?php
+                $stmt = $pdo->query("SELECT * FROM trabajadores");
+                while($row = $stmt->fetch()) {
+                    echo "<option value='{$row['id']}'>{$row['nombre']}</option>";
+                }
+                ?>
+            </select>
+        </div>
+
+        <!-- FECHA -->
+        <div class="col-md-6">
+            <label class="form-label">Fecha</label>
+            <input type="date" name="fecha" class="form-control" required>
+        </div>
+
+        <div class="col-12">
+            <button class="btn btn-index w-100">Consultar</button>
+        </div>
+
+    </form>
+
+    <?php
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+
+        $id = $_POST['trabajador_id'];
+        $fecha = $_POST['fecha'];
+
+        $stmt = $pdo->prepare("SELECT * FROM trabajadores WHERE id = ?");
+        $stmt->execute([$id]);
+        $trabajador = $stmt->fetch();
+
+        if ($trabajador) {
+            $turno = turnoTrabajador($fecha, $trabajador['fecha_inicio']);
+
+            echo "
+            <div class='alert alert-info mt-4'>
+                <b>{$trabajador['nombre']}</b> estará el día <b>$fecha</b> en:<br>
+                <h5 class='mt-2'>$turno</h5>
+            </div>";
+        } else {
+            echo "<div class='alert alert-danger mt-4'>Trabajador no encontrado</div>";
+        }
+    }
+    ?>
+
+</div>
+
+<?php include 'includes/footer.php'; ?>
