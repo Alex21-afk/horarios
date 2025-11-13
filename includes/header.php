@@ -13,7 +13,8 @@
 
 <nav class="navbar navbar-dark nav-index mb-4 ">
     <div class="container ">
-        <span class="navbar-brand ">Sistema de Turnos</span>
+        <img src="img/logo.png" alt="logo">
+        <span class="navbar-brand ">Consulta de Turnos</span>
     </div>
 </nav>
 <div class="container">

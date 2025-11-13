@@ -1,22 +1,28 @@
 :root {
   --primary: #14496b;
-  --secundary: #5ca9a9;
+  --secundary: #31518dff;
   --texto: black;
+}
+/* input */
+.input-index {
+  border: 1px solid var(--secundary); /* borde negro */
+  padding: 5px;           /* espacio interno */
+  border-radius: 4px;     /* esquinas redondeadas (opcional) */
 }
 
 /* nav */
 .nav-index {
-  background-color: var(--primary);
+  background-color: var(--secundary);
 }
 
 /* boton */
 
 .btn-index {
   color: white;
-  background-color: var(--primary);
+  background-color: var(--secundary);
 }
 .btn-index:hover {
-  background-color: var(--secundary);
+  background-color: var(--primary);
   color: white;
   cursor: pointer;
 }
