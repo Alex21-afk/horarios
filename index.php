@@ -23,7 +23,7 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
 <div class="card shadow p-3 mb-4">
     <div class="d-flex justify-content-between align-items-center">
         <h5 class="m-0">Administración</h5>
-        <a href="workers/list.php" class="btn btn-index">Gestionar Trabajadores</a>
+        <a href="workers/trabajadores.php" class="btn btn-index">Gestionar Trabajadores</a>
     </div>
 </div>
 <!-- Fin: ver trabajadores -->
