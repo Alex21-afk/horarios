@@ -89,9 +89,8 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
 
 <form action="reporte_excel.php" method="POST" class="row g-3">
   <div class="col-md-6">
-   <label for="mes" class="form-label">Selecciona mes</label>
+   <label for="mes" class="form-label">Selecciona mes: (Ejemplo: 2025-11)</label>
 <input type="month" name="mes" id="mes" class="form-control input-index" required>
-<small class="text-muted">Ejemplo: 2025-11</small>
   </div>
 
   <div class="col-md-6 d-flex align-items-end">
@@ -99,5 +98,5 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
   </div>
 </form>
 </div>
-<hr class="my-3">
+
 <?php include 'includes/footer.php'; ?>

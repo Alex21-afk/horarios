@@ -12,37 +12,39 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 function turnoTrabajador($fechaConsulta, $fechaInicio) {
     $turnos = [
         0 => [
-            'modalidad' => 'Turno Tarde (Lun-Sáb 3pm-11pm)',
+            'modalidad' => 'Turno Tarde (Presencial)',
             'horario_lv' => ['15:00 p.m','23:00 p.m'],
             'horario_sab'=> ['15:00 p.m','23:00 p.m'],
             'refrigerio' => ['',''],
             'horas_lv' => 40,
-            'horas_sab'=> 8
+            'horas_sab'=> 8,
+            'tipo' => 'lun-sab'
         ],
         1 => [
-            'modalidad' => 'Turno Mañana (Lun-Sáb 7am-4pm)',
+            'modalidad' => 'Turno Mañana (Presencial)',
             'horario_lv' => ['07:00 a.m','16:00 p.m'],
             'horario_sab'=> ['07:00 a.m','15:00 p.m'],
             'refrigerio' => ['12:00','13:00'],
             'horas_lv' => 40,
-            'horas_sab'=> 8
+            'horas_sab'=> 8,
+            'tipo' => 'lun-sab'
         ],
         2 => [
-            'modalidad' => 'Turno Mañana (Lun-Vie 6:45am-5pm)',
+            'modalidad' => 'Turno Mañana (Presencial)',
             'horario_lv' => ['06:45 a.m','17:00 p.m'],
             'horario_sab'=> ['06:45 a.m','15:00 p.m'],
             'refrigerio' => ['13:00','14:00'],
             'horas_lv' => 46.5,
-            'horas_sab'=> 8
+            'horas_sab'=> 8,
+            'tipo' => 'lun-vie'
         ],
     ];
 
     $inicio = new DateTime($fechaInicio);
     $consulta = new DateTime($fechaConsulta);
 
-    $diff = $inicio->diff($consulta);
-    $dias = (int)$diff->days;
-    $semanas = floor($dias / 7);
+    $diff = $inicio->diff($consulta)->days;
+    $semanas = floor($diff / 7);
     $idx = $semanas % 3;
 
     return $turnos[$idx];
@@ -50,31 +52,42 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
 
 // ---------------------- Obtener mes ----------------------
 $mesSeleccionado = $_POST['mes'] ?? $_GET['mes'] ?? '';
-if (empty($mesSeleccionado)) {
-    die("Mes no especificado.");
-}
+if (empty($mesSeleccionado)) die("Mes no especificado.");
 list($anio, $mes) = explode('-', $mesSeleccionado);
 
-// ---------------------- Datos ----------------------
 setlocale(LC_TIME, 'es_ES.UTF-8');
-$nombreMes = strftime('%B', strtotime("$anio-$mes-01"));
-$nombreMes = mb_strtoupper($nombreMes, 'UTF-8');
+$nombreMes = mb_strtoupper(strftime('%B', strtotime("$anio-$mes-01")), 'UTF-8');
 
+// ---------------------- Cargar analistas ----------------------
 $stmt = $pdo->query("SELECT id, nombre, fecha_inicio FROM trabajadores ORDER BY id");
 $trabajadores = $stmt->fetchAll();
+
+// --- Agregar Soporte Arcos (turno fijo) ---
+$trabajadores[] = [
+    'id' => 999,
+    'nombre' => 'Soporte Arcos',
+    'fecha_inicio' => '2024-01-01',
+    'turno_fijo' => [
+        'modalidad' => 'Turno Noche (Remoto)',
+        'horario_lv' => ['23:00 p.m','07:00 a.m'],
+        'horario_sab'=> ['23:00 p.m','07:00 a.m'],
+        'refrigerio' => ['',''],
+        'horas_lv' => 40,
+        'horas_sab'=> 8,
+        'tipo' => 'lun-sab'
+    ]
+];
 
 // ---------------------- Crear hoja ----------------------
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle("Turnos $mes-$anio");
 
-// Estilos
-$titleFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '9AC6E0']]; // azul claro
-$headerFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '1F4366']]; // azul oscuro
+$titleFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '9AC6E0']];
+$headerFill = ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => '1F4366']];
 $headerFontColor = ['argb' => 'FFFFFF'];
 $center = ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER];
 
-// ---------------------- Fechas ----------------------
 $fila = 1;
 $semana = 1;
 
@@ -83,20 +96,19 @@ $ultimoDiaNum = cal_days_in_month(CAL_GREGORIAN, $mes, $anio);
 $ultimoDia = new DateTime("$anio-$mes-$ultimoDiaNum");
 
 $weekStart = clone $primerDia;
-if ($weekStart->format('N') != 1) {
-    $weekStart->modify('next monday');
-}
+if ($weekStart->format('N') != 1) $weekStart->modify('next monday');
 
-// ---------------------- Generar reporte por semanas ----------------------
+// ---------------------- REPORTE POR SEMANAS ----------------------
 while ($weekStart <= $ultimoDia) {
+
     $lunes = clone $weekStart;
     $viernes = (clone $lunes)->modify('+4 days');
     $sabado = (clone $lunes)->modify('+5 days');
 
-    if ($viernes > $ultimoDia) $viernes = clone $ultimoDia;
-    if ($sabado > $ultimoDia) $sabado = clone $ultimoDia;
+    if ($viernes > $ultimoDia) $viernes = $ultimoDia;
+    if ($sabado > $ultimoDia) $sabado = $ultimoDia;
 
-    // ======= LUNES A VIERNES =======
+    // ---------- TÍTULO LUN-VIE -----------
     $sheet->mergeCells("A{$fila}:F{$fila}");
     $sheet->setCellValue("A{$fila}", "LUNES A VIERNES SEMANA {$semana} - {$nombreMes} {$anio}");
     $sheet->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(14);
@@ -109,33 +121,40 @@ while ($weekStart <= $ultimoDia) {
     $sheet->getStyle("A{$fila}")->getAlignment()->applyFromArray($center);
     $fila++;
 
+    // ---------- Encabezados L-V ----------
     $sheet->fromArray(['Analista','Modalidad','Horas trabajadas','Horario Lunes - Viernes','Refrigerio (Inicio)','Refrigerio (Fin)'], null, "A{$fila}");
-    $sheet->getStyle("A{$fila}:F{$fila}")->getFont()->setBold(true);
-    $sheet->getStyle("A{$fila}:F{$fila}")->getFill()->applyFromArray($headerFill);
+    $sheet->getStyle("A{$fila}:F{$fila}")->applyFromArray(['font'=>['bold'=>true],'alignment'=>$center]);
     $sheet->getStyle("A{$fila}:F{$fila}")->getFont()->getColor()->applyFromArray($headerFontColor);
-    $sheet->getStyle("A{$fila}:F{$fila}")->getAlignment()->applyFromArray($center);
+    $sheet->getStyle("A{$fila}:F{$fila}")->getFill()->applyFromArray($headerFill);
     $sheet->getStyle("A{$fila}:F{$fila}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
     $fila++;
 
+    // ---------- Datos L-V ----------
     foreach ($trabajadores as $t) {
-        $turnoInfo = turnoTrabajador($lunes->format('Y-m-d'), $t['fecha_inicio']);
+
+        // Soporte Arcos → turno fijo
+        if (isset($t['turno_fijo'])) {
+            $turno = $t['turno_fijo'];
+        } else {
+            $turno = turnoTrabajador($lunes->format('Y-m-d'), $t['fecha_inicio']);
+        }
 
         $sheet->fromArray([
             $t['nombre'],
-            $turnoInfo['modalidad'],
-            $turnoInfo['horas_lv'],
-            $turnoInfo['horario_lv'][0] . ' - ' . $turnoInfo['horario_lv'][1],
-            $turnoInfo['refrigerio'][0],
-            $turnoInfo['refrigerio'][1]
+            $turno['modalidad'],
+            $turno['horas_lv'],
+            $turno['horario_lv'][0] . " - " . $turno['horario_lv'][1],
+            $turno['refrigerio'][0],
+            $turno['refrigerio'][1]
         ], null, "A{$fila}");
 
         $sheet->getStyle("A{$fila}:F{$fila}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
         $fila++;
     }
 
-    $fila++; // Espacio
+    $fila++;
 
-    // ======= SÁBADO =======
+    // ---------- SÁBADO ----------
     $sheet->mergeCells("A{$fila}:F{$fila}");
     $sheet->setCellValue("A{$fila}", "SÁBADO SEMANA {$semana} - {$nombreMes} {$anio}");
     $sheet->getStyle("A{$fila}")->getFont()->setBold(true)->setSize(14);
@@ -148,29 +167,36 @@ while ($weekStart <= $ultimoDia) {
     $sheet->getStyle("A{$fila}")->getAlignment()->applyFromArray($center);
     $fila++;
 
+    // Encabezados sábado
     $sheet->fromArray(['Analista','Modalidad','Horas trabajadas','Horario Sábado','Refrigerio (Inicio)','Refrigerio (Fin)'], null, "A{$fila}");
-    $sheet->getStyle("A{$fila}:F{$fila}")->getFont()->setBold(true);
-    $sheet->getStyle("A{$fila}:F{$fila}")->getFill()->applyFromArray($headerFill);
+    $sheet->getStyle("A{$fila}:F{$fila}")->applyFromArray(['font'=>['bold'=>true],'alignment'=>$center]);
     $sheet->getStyle("A{$fila}:F{$fila}")->getFont()->getColor()->applyFromArray($headerFontColor);
-    $sheet->getStyle("A{$fila}:F{$fila}")->getAlignment()->applyFromArray($center);
+    $sheet->getStyle("A{$fila}:F{$fila}")->getFill()->applyFromArray($headerFill);
     $sheet->getStyle("A{$fila}:F{$fila}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
     $fila++;
 
+    // Datos sábado
     foreach ($trabajadores as $t) {
-        $turnoInfo = turnoTrabajador($sabado->format('Y-m-d'), $t['fecha_inicio']);
 
-        // Omitir los turnos LUN-VIE
-        if (stripos($turnoInfo['modalidad'], 'Lun-Vie') !== false) {
-            continue;
+        // Soporte Arcos siempre aparece sábado
+        if (isset($t['turno_fijo'])) {
+            $turno = $t['turno_fijo'];
+        } else {
+            $turno = turnoTrabajador($sabado->format('Y-m-d'), $t['fecha_inicio']);
+
+            // Omitir los que tienen turnos Lun-Vie
+            if ($turno['tipo'] === 'lun-vie') {
+                continue;
+            }
         }
 
         $sheet->fromArray([
             $t['nombre'],
-            $turnoInfo['modalidad'],
-            $turnoInfo['horas_sab'],
-            $turnoInfo['horario_sab'][0] . ' - ' . $turnoInfo['horario_sab'][1],
-            '', // sin refrigerio sábado
-            ''
+            $turno['modalidad'],
+            $turno['horas_sab'],
+            $turno['horario_sab'][0] . " - " . $turno['horario_sab'][1],
+            "", // sábado sin refrigerio
+            ""
         ], null, "A{$fila}");
 
         $sheet->getStyle("A{$fila}:F{$fila}")->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
@@ -179,17 +205,15 @@ while ($weekStart <= $ultimoDia) {
 
     $fila += 2;
     $semana++;
-    $weekStart->modify('+7 days'); // siguiente lunes
+    $weekStart->modify('+7 days');
 }
 
-// Ajustar anchos
+// Ajuste ancho
 foreach (range('A','F') as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 
-$sheet->getStyle("C1:F{$fila}")->getAlignment()->applyFromArray($center);
-
-// ---------------------- Descargar ----------------------
+// Descargar
 $filename = "reporte_turnos_{$mesSeleccionado}.xlsx";
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header("Content-Disposition: attachment; filename=\"$filename\"");
