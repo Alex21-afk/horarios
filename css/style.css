@@ -3,16 +3,24 @@
   --secundary: #31518dff;
   --texto: black;
 }
+
+.bg-index {
+  background-color: var(--secundary);
+}
+
 /* input */
 .input-index {
   border: 1px solid var(--secundary); /* borde negro */
-  padding: 5px;           /* espacio interno */
-  border-radius: 4px;     /* esquinas redondeadas (opcional) */
+  padding: 5px; /* espacio interno */
+  border-radius: 4px; /* esquinas redondeadas (opcional) */
 }
 
 /* nav */
 .nav-index {
-  background-color: var(--secundary);
+  background-color: white;
+}
+.span-index {
+  color: black;
 }
 
 /* boton */
