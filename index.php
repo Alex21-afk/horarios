@@ -19,28 +19,39 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
     return $turnos[$turnoIndex];
 }
 ?>
-<!-- ver trabajadores -->
-<div class="card shadow p-3 mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="m-0">Administración</h5>
-        <a href="includes/trabajadores/lista_tra.php" class="btn btn-index">Gestionar Trabajadores</a>
+<!-- Banner de bienvenida -->
+<div class="card shadow-lg p-4 mb-4" style="background: white; position: relative;">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h4 class="mb-2"><i class="bi bi-person-workspace me-2"></i>Panel de Administración</h4>
+            <p class="text-muted mb-0">Gestiona los turnos y trabajadores del sistema</p>
+        </div>
+        <div class="col-md-4 text-end mt-3 mt-md-0">
+            <a href="includes/trabajadores/lista_tra.php" class="btn btn-index">
+                <i class="bi bi-people-fill me-2"></i>Gestionar Trabajadores
+            </a>
+        </div>
     </div>
 </div>
-<!-- Fin: ver trabajadores -->
+<!-- Fin: banner -->
  
-<div class="card shadow p-4">
-    <h3 class="mb-4 text-center">Consulta de Turno</h3>
+<div class="card shadow-lg p-4 mb-4">
+    <div class="text-center mb-4">
+        <i class="bi bi-clock-history" style="font-size: 3rem; color: var(--accent);"></i>
+        <h3 class="mt-3">Consulta de Turno</h3>
+        <p class="text-muted">Selecciona un trabajador y fecha para consultar su turno asignado</p>
+    </div>
 
-    <form method="POST" class="row g-3">
+    <form method="POST" class="row g-4">
 
         <!-- SELECT TRABAJADOR -->
         <div class="col-md-6">
-            <label class="form-label">Trabajador</label>
-            <select class="form-select input-index " name="trabajador_id" required>
-                <option value="">Seleccionar...</option>
+            <label class="form-label"><i class="bi bi-person-fill me-2"></i>Trabajador</label>
+            <select class="form-select" name="trabajador_id" required>
+                <option value="">🔍 Seleccionar trabajador...</option>
                 <?php
-                $stmt = $pdo->query("SELECT * FROM trabajadores");
-                $trabajadorSeleccionado = $_POST['trabajador_id'] ?? ''; // Mantener seleccionado
+                $stmt = $pdo->query("SELECT * FROM trabajadores ORDER BY nombre ASC");
+                $trabajadorSeleccionado = $_POST['trabajador_id'] ?? '';
 
                 while($row = $stmt->fetch()) {
                     $selected = ($trabajadorSeleccionado == $row['id']) ? 'selected' : '';
@@ -52,17 +63,19 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
 
         <!-- FECHA -->
         <div class="col-md-6">
-            <label class="form-label">Fecha</label>
+            <label class="form-label"><i class="bi bi-calendar-event me-2"></i>Fecha de Consulta</label>
             <input 
                 type="date" 
                 name="fecha" 
-                class="form-control input-index " 
+                class="form-control" 
                 required 
-                value="<?= isset($_POST['fecha']) ? htmlspecialchars($_POST['fecha']) : '' ?>">
+                value="<?= isset($_POST['fecha']) ? htmlspecialchars($_POST['fecha']) : date('Y-m-d') ?>">
         </div>
 
         <div class="col-12">
-            <button class="btn btn-index w-100">Consultar</button>
+            <button type="submit" class="btn btn-index w-100">
+                <i class="bi bi-search me-2"></i>Consultar Turno
+            </button>
         </div>
     </form>
 
@@ -78,33 +91,59 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
 
         if ($trabajador) {
             $turno = turnoTrabajador($fecha, $trabajador['fecha_inicio']);
+            $fechaFormateada = date('d/m/Y', strtotime($fecha));
 
             echo "
-            <div class='alert alert-info mt-4'>
-                <b>{$trabajador['nombre']}</b> estará el día <b>$fecha</b> en el turno:<br>
-                <h5 class='mt-2'>$turno</h5>
+            <div class='alert alert-info mt-4 border-0' style='animation: fadeInUp 0.5s ease;'>
+                <div class='d-flex align-items-center mb-3'>
+                    <i class='bi bi-check-circle-fill me-3' style='font-size: 2.5rem; color: var(--accent);'></i>
+                    <div>
+                        <h5 class='mb-1' style='color: var(--primary);'>Resultado de la Consulta</h5>
+                        <small class='text-muted'>Información actualizada</small>
+                    </div>
+                </div>
+                <div class='ps-2'>
+                    <p class='mb-2'><i class='bi bi-person-badge me-2'></i><strong>Trabajador:</strong> {$trabajador['nombre']}</p>
+                    <p class='mb-2'><i class='bi bi-calendar-check me-2'></i><strong>Fecha:</strong> $fechaFormateada</p>
+                    <div class='p-3 mt-3 rounded' style='background: rgba(0, 180, 216, 0.1); border-left: 4px solid var(--accent);'>
+                        <p class='mb-1'><strong>Turno Asignado:</strong></p>
+                        <h5 class='mb-0' style='color: var(--accent);'><i class='bi bi-clock me-2'></i>$turno</h5>
+                    </div>
+                </div>
             </div>";
         } else {
-            echo "<div class='alert alert-danger mt-4'>Trabajador no encontrado</div>";
+            echo "<div class='alert alert-danger mt-4 border-0'>
+                    <i class='bi bi-exclamation-triangle-fill me-2'></i>Trabajador no encontrado
+                  </div>";
         }
     }
     ?>
 </div>
 
-<hr class="my-3">
-<div class="card shadow p-4">
-<h4 class="mb-3 text-center ">Generar reporte mensual</h4>
+<hr class="my-4">
 
-<form action="reporte_excel.php" method="POST" class="row g-3">
-  <div class="col-md-6">
-   <label for="mes" class="form-label">Selecciona mes: (Ejemplo: 2025-11)</label>
-<input type="month" name="mes" id="mes" class="form-control input-index" required>
-  </div>
+<div class="card shadow-lg p-4">
+    <div class="text-center mb-4">
+        <i class="bi bi-file-earmark-excel" style="font-size: 3rem; color: var(--success);"></i>
+        <h4 class="mt-3">Generar Reporte Mensual</h4>
+        <p class="text-muted">Exporta los turnos del mes seleccionado en formato Excel</p>
+    </div>
 
-  <div class="col-md-6 d-flex align-items-end">
-    <button type="submit" class="btn btn-success w-100">Descargar Excel</button>
-  </div>
-</form>
+    <form action="reporte_excel.php" method="POST" class="row g-4">
+        <div class="col-md-8">
+            <label for="mes" class="form-label"><i class="bi bi-calendar-range me-2"></i>Selecciona el Mes</label>
+            <input type="month" name="mes" id="mes" class="form-control" required 
+                   value="<?= date('Y-m') ?>" 
+                   max="<?= date('Y-m', strtotime('+1 year')) ?>">
+            <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Formato: Año-Mes (Ejemplo: 2025-11)</small>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end">
+            <button type="submit" class="btn btn-success w-100">
+                <i class="bi bi-download me-2"></i>Descargar Excel
+            </button>
+        </div>
+    </form>
 </div>
 
 <?php include 'includes/footer.php'; ?>
