@@ -32,9 +32,10 @@ $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <?php if (isset($_GET['editado'])): ?>
-            <div class="alert alert-success border-0 d-flex align-items-center" style="animation: fadeInUp 0.5s ease;">
+            <div class="alert alert-success alert-dismissible fade show border-0 d-flex align-items-center" role="alert" style="animation: fadeInUp 0.5s ease;">
                 <i class="bi bi-check-circle-fill me-3" style="font-size: 1.5rem;"></i>
                 <span>✅ Nombre actualizado correctamente</span>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
             </div>
         <?php endif; ?>
 

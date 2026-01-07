@@ -94,7 +94,7 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
             $fechaFormateada = date('d/m/Y', strtotime($fecha));
 
             echo "
-            <div class='alert alert-info mt-4 border-0' style='animation: fadeInUp 0.5s ease;'>
+            <div class='alert alert-info alert-dismissible fade show mt-4 border-0' role='alert' style='animation: fadeInUp 0.5s ease;'>
                 <div class='d-flex align-items-center mb-3'>
                     <i class='bi bi-check-circle-fill me-3' style='font-size: 2.5rem; color: var(--accent);'></i>
                     <div>
@@ -110,10 +110,12 @@ function turnoTrabajador($fechaConsulta, $fechaInicio) {
                         <h5 class='mb-0' style='color: var(--accent);'><i class='bi bi-clock me-2'></i>$turno</h5>
                     </div>
                 </div>
+                <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Cerrar'></button>
             </div>";
         } else {
-            echo "<div class='alert alert-danger mt-4 border-0'>
+            echo "<div class='alert alert-danger alert-dismissible fade show mt-4 border-0' role='alert'>
                     <i class='bi bi-exclamation-triangle-fill me-2'></i>Trabajador no encontrado
+                    <button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Cerrar'></button>
                   </div>";
         }
     }
